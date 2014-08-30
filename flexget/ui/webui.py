@@ -138,7 +138,7 @@ def shutdown_session(exception=None):
     log.debug('db_session removed')
 
 
-def start(mg):
+def start(mg, config):
     """Start WEB UI"""
 
     global manager
@@ -187,12 +187,13 @@ def start(mg):
 
     log.debug('server exited')
     fire_event('webui.stop')
-    manager.shutdown(finish_queue=False)
 
 
 def start_server():
     global server
     from cherrypy import wsgiserver
+    import cherrypy
+    cherrypy.engine
     d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
     server = wsgiserver.CherryPyWSGIServer((manager.options.webui.bind, manager.options.webui.port), d)
 
