@@ -14,13 +14,13 @@ class TestTraktLookup(FlexGetBase):
             trakt_lookup: yes
             # Access a tvdb field to cause lazy loading to occur
             set:
-              afield: "{{trakt_series_tvdb_id}}{{trakt_ep_name}}"
+              afield: "{{tvdb_id}}{{trakt_ep_name}}"
         tasks:
           test_show_lookup:
             mock:
               - title: House
                 series_name: House
-          test:
+          test_episode_lookup:
             mock:
               - {title: 'House.S01E02.HDTV.XViD-FlexGet'}
               - {title: 'Doctor.Who.2005.S02E03.PDTV.XViD-FlexGet'}
@@ -56,9 +56,9 @@ class TestTraktLookup(FlexGetBase):
                                                         % (entry['trakt_series_status'])
 
     @use_vcr
-    def test_lookup(self):
+    def test_episode_lookup(self):
         """trakt: Test Lookup (ONLINE)"""
-        self.execute_task('test')
+        self.execute_task('test_episode_lookup')
         entry = self.task.find_entry(title='House.S01E02.HDTV.XViD-FlexGet')
         assert entry['trakt_ep_name'] == 'Paternity', \
             '%s trakt_ep_name should be Paternity' % entry['title']
