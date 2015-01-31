@@ -17,6 +17,10 @@ class TestTraktLookup(FlexGetBase):
             set:
               afield: "{{trakt_series_tvdb_id}}{{trakt_ep_name}}"
         tasks:
+          test_show_lookup:
+            mock:
+              - title: House
+                series_name: House
           test:
             mock:
               - {title: 'House.S01E02.HDTV.XViD-FlexGet'}
@@ -42,13 +46,14 @@ class TestTraktLookup(FlexGetBase):
 
     """
 
-    def test_lookup_name(self):
+    @use_vcr
+    def test_show_lookup(self):
         """trakt: Test Lookup (ONLINE)"""
-        self.execute_task('test')
-        entry = self.task.find_entry(title='House.S01E02.HDTV.XViD-FlexGet')
+        self.execute_task('test_show_lookup')
+        entry = self.task.find_entry(title='House')
         assert entry['trakt_series_id'] == 1399, \
             'Trakt_ID should be 1339 is %s for %s' % (entry['trakt_series_id'], entry['series_name'])
-        assert entry['trakt_series_status'] == 'ended', 'Series Status should be "ENDED" returned %s' \
+        assert entry['trakt_series_status'] == 'ended', 'Series status should "ended". Got %s' \
                                                         % (entry['trakt_series_status'])
 
     @use_vcr
