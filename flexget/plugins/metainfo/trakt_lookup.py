@@ -77,7 +77,7 @@ class PluginTraktLookup(object):
         'trakt_series_air_time': 'air_time',
         'trakt_series_air_day': 'air_day',
         'trakt_series_content_rating': 'certification',
-        #'trakt_series_genres': lambda series: [genre.name for genre in series.genre],
+        'trakt_genres': lambda i: [db_genre.name for db_genre in i.genres],
         'trakt_series_network': 'network',
         'imdb_url': lambda series: series.imdb_id and 'http://www.imdb.com/title/%s' % series.imdb_id,
         'trakt_series_url': lambda series: series.slug and 'http://trakt.tv/shows/%s' % series.slug,
@@ -122,7 +122,8 @@ class PluginTraktLookup(object):
         'trakt_runtime': 'runtime',
         'trakt_rating': 'rating',
         'trakt_votes': 'votes',
-        'trakt_language': 'language'
+        'trakt_language': 'language',
+        'trakt_genres': lambda i: [db_genre.name for db_genre in i.genres]
     }
 
     schema = {'type': 'boolean'}
