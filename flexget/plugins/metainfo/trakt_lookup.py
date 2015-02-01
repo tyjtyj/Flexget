@@ -8,6 +8,7 @@ from flexget.manager import Session
 try:
     from flexget.plugins.api_trakt import ApiTrakt
     lookup_series = ApiTrakt.lookup_series
+    lookup_movie = ApiTrakt.lookup_movie
 except ImportError:
     raise plugin.DependencyError(issued_by='trakt_lookup', missing='api_trakt',
                                  message='trakt_lookup requires the `api_trakt` plugin')
@@ -89,7 +90,7 @@ class PluginTraktLookup(object):
         'trakt_series_episodes': lambda show: [episodes.title for episodes in show.episodes]
     }
 
-  # Episode info
+    # Episode info
     episode_map = {
         'trakt_ep_name': 'title',
         'trakt_ep_imdb_id': 'imdb_id',
@@ -104,6 +105,25 @@ class PluginTraktLookup(object):
         'trakt_episode': 'number',
         'trakt_ep_id': lambda ep: 'S%02dE%02d' % (ep.season, ep.number),
         }
+
+    # Movie info
+    movie_map = {
+        'movie_name': 'title',
+        'movie_year': 'year',
+        'trakt_name': 'title',
+        'trakt_year': 'year',
+        'trakt_movie_id': 'id',
+        'trakt_movie_slug': 'slug',
+        'imdb_id': 'imdb_id',
+        'tmdb_id': 'tmdb_id',
+        'trakt_tagline': 'tagline',
+        'trakt_overview': 'overview',
+        'trakt_released': 'released',
+        'trakt_runtime': 'runtime',
+        'trakt_rating': 'rating',
+        'trakt_votes': 'votes',
+        'trakt_language': 'language'
+    }
 
     schema = {'type': 'boolean'}
 
@@ -142,6 +162,25 @@ class PluginTraktLookup(object):
                 entry.update_using_map(self.episode_map, episode)
         return entry[field]
 
+    def lazy_movie_lookup(self, entry, field):
+        """Does the lookup for this entry and populates the entry fields."""
+        with Session() as session:
+            lookupargs = {'title': entry.get('movie_name', entry['title'], eval_lazy=False),
+                          'year': entry.get('movie_year', eval_lazy=False),
+                          'trakt_id': entry.get('trakt_movie_id', eval_lazy=False),
+                          'trakt_slug': entry.get('trakt_movie_slug', eval_lazy=False),
+                          'tmdb_id': entry.get('tmdb_id', eval_lazy=False),
+                          'imdb_id': entry.get('imdb_id', eval_lazy=False),
+                          'session': session}
+            try:
+                movie = lookup_movie(**lookupargs)
+            except LookupError as e:
+                log.debug(e.message)
+                entry.unregister_lazy_fields(self.movie_map, self.lazy_movie_lookup)
+            else:
+                entry.update_using_map(self.movie_map, movie)
+        return entry[field]
+
     # Run after series and metainfo series
     @plugin.priority(110)
     def on_task_metainfo(self, task, config):
@@ -149,12 +188,13 @@ class PluginTraktLookup(object):
             return
 
         for entry in task.entries:
-
             if entry.get('series_name') or entry.get('tvdb_id', eval_lazy=False):
                 entry.register_lazy_fields(self.series_map, self.lazy_series_lookup)
 
                 if 'series_season' in entry and 'series_episode' in entry:
                     entry.register_lazy_fields(self.episode_map, self.lazy_episode_lookup)
+            else:
+                entry.register_lazy_fields(self.movie_map, self.lazy_movie_lookup)
 
 
 @event('plugin.register')
