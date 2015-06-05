@@ -28,8 +28,13 @@ class OutputHtml:
         if not config.get('template'):
             config['template'] = 'default.template'
 
-        filename = os.path.expanduser(config['template'])
-        output = os.path.expanduser(config['file'])
+        if not task.accepted:
+            return			
+
+        for entry in task.accepted:
+            output = os.path.expanduser(entry.render(config['file']))
+            filename = os.path.expanduser(entry.render(config['template']))
+        
         # Output to config directory if absolute path has not been specified
         if not os.path.isabs(output):
             output = os.path.join(task.manager.config_base, output)
